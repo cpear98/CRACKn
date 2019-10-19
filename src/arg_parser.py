@@ -3,7 +3,7 @@ class InvalidArgumentException(Exception):
 
 class ArgParser():
     def __init__(self, args):
-        self.args = 
+        self.args = args
         self.param_descriptions = {'dir': 'The directory containing the Python source code you would like to analyze.'}
         self.params = {'dir': None}
         self.flag_descriptions = {'h': 'Display this help message'}
