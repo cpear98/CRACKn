@@ -1,8 +1,9 @@
 import subprocess
+import sys
 from arg_parser import ArgParser
 
 if __name__ == '__main__':
-    parser = ArgParser()
+    parser = ArgParser(sys.argv[1:])
     parser.parse_cli()
 
     if parser.flags['h']:

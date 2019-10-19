@@ -1,10 +1,9 @@
-import sys
-
 class InvalidArgumentException(Exception):
     pass
 
 class ArgParser():
-    def __init__(self):
+    def __init__(self, args):
+        self.args = 
         self.param_descriptions = {'dir': 'The directory containing the Python source code you would like to analyze.'}
         self.params = {'dir': None}
         self.flag_descriptions = {'h': 'Display this help message'}
@@ -12,7 +11,7 @@ class ArgParser():
 
     def parse_cli(self):
         try:
-            for arg in sys.argv[1:]:
+            for arg in self.args:
                 if arg[0] == '-':
                     self.parse_flag(arg[1:])
                 else:
