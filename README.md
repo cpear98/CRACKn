@@ -1,2 +1,2 @@
 # CRACKn
-Automatic Security Vulnerability Repair
+A tool for Automatic Security Vulnerability Repair
