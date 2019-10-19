@@ -5,6 +5,7 @@ class ArgParser():
     def __init__(self, args):
         self.args = args
         self.param_descriptions = {'dir': 'The directory containing the Python source code you would like to analyze.'}
+        self.param_values = {'dir': None} # dictionary mapping parameters to a set of values they can take. if any value is allowed, the param has a value of None
         self.params = {'dir': None}
         self.flag_descriptions = {'h': 'Display this help message'}
         self.flags = {'h': False}
@@ -36,7 +37,6 @@ class ArgParser():
         self.flags[flag] = True
 
     def has_basic_requirements(self):
-        # TODO: stub
         if self.params['dir'] is not None:
             return True
         return False
@@ -48,7 +48,7 @@ class ArgParser():
         return len(flag) == 1 and flag in self.flags
 
     def is_valid_param(self, param):
-        return len(param) == 2 and param[0] != '' and param[1] != '' and param[0] in self.params
+        return len(param) == 2 and param[0] != '' and param[1] != '' and param[0] in self.params and (self.param_values[param[0]] is None or param[1] in self.param_values[0])
 
     @staticmethod
     def print_unrecognized_arg(arg):
