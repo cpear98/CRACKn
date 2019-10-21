@@ -1,10 +1,9 @@
 import subprocess
 import sys
-from crackn.arg_parser import ArgParser
+from crackn.parsing.cli_parser import CLIParser
 
 if __name__ == '__main__':
-    print(sys.argv)
-    parser = ArgParser(sys.argv[1:])
+    parser = CLIParser(sys.argv[1:])
     print('Initialized Parser.')
     parser.parse_cli()
     print('Parsed CLI arguments.')

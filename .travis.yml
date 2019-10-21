@@ -9,4 +9,4 @@ install:
   - pip install -r requirements.txt
 
 script: 
-  - cd src && python3 -m test.run_all
+  - python3 test.py

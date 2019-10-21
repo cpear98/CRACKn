@@ -1,7 +1,7 @@
 class InvalidArgumentException(Exception):
     pass
 
-class ArgParser():
+class CLIParser():
     def __init__(self, args, check_assertions=False):
         self.args = args
         self.param_descriptions = {'dir': 'The directory containing the Python source code you would like to analyze.',
