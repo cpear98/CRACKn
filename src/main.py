@@ -9,7 +9,7 @@ if __name__ == '__main__':
     print('Parsed CLI arguments.')
 
     if parser.flags['h']:
-        parser.print_usage()
+        parser.print_help()
         exit(0)
 
     directory = parser.params['dir']
