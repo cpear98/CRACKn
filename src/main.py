@@ -8,11 +8,11 @@ if __name__ == '__main__':
     parser.parse_cli()
     print('Parsed CLI arguments.')
 
-    if parser.flags['h']:
+    if parser.get_flag('-h').get_value():
         parser.print_help()
         exit(0)
 
-    directory = parser.params['dir']
+    directory = parser.get_parameter('sdir').get_value()
     print('Running Bandit...')
     task_complete = False
     while(not task_complete):
