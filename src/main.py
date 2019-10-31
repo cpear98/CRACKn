@@ -4,16 +4,14 @@ from crackn.parsing.cli_parser import CLIParser
 
 if __name__ == '__main__':
     parser = CLIParser(sys.argv[1:])
-    print('Initialized Parser.')
     parser.parse_cli()
-    print('Parsed CLI arguments.')
 
-    if parser.flags['h']:
-        parser.print_usage()
+    if parser.get_flag('-h').get_value():
+        parser.print_help()
         exit(0)
 
-    directory = parser.params['dir']
-    print('Running Bandit...')
+    directory = parser.get_parameter('sdir').get_value()
+    print('[INFO]: Running Bandit...')
     task_complete = False
     while(not task_complete):
         try:
@@ -21,4 +19,4 @@ if __name__ == '__main__':
             task_complete = True
         except TimeoutError:
             pass
-    print('Bandit analysis complete.')
+    print('[INFO]: Bandit analysis complete.')

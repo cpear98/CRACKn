@@ -1,5 +1,5 @@
 import unittest
-from crackn.parsing.cli_parser import CLIParser
+from crackn.parsing.cli_parser import CLIParser, Language, Framework
 
 class TestCLIParser(unittest.TestCase):
     # Test CLIParser.parse_cli method
@@ -57,47 +57,52 @@ class TestCLIParser(unittest.TestCase):
     def test_parse_cli_exits_with_good_flag_bad_param(self):
         args = ['-g', 'bad_param=bad_val']
         parser = CLIParser(args, check_assertions=True)
-        parser.add_flag('g') # add g to the parser as a valid command line flag
+        parser.add_flag('-g', None) # add g to the parser as a valid command line flag
         with self.assertRaises(SystemExit) as sys_exit:
             parser.parse_cli()
         self.assertEqual(sys_exit.exception.code, 1)
 
     def test_parse_cli_good_params(self):
-        args = ['dir=test', 'good_param=good_val2']
+        args = ['sdir=.', 'tdir=test', 'good_param=good_val2']
         parser = CLIParser(args, check_assertions=True)
         parser.add_param('good_param', {'good_val1', 'good_val2'})
         parser.parse_cli()
-        oracle = {'dir': 'test', 'language': 'Python', 'good_param': 'good_val2'}
-        self.assertDictEqual(parser.params, oracle)
+        oracle = {'sdir': '.', 'tdir': 'test', 'lang': Languages.PYTHON, 'framework': Frameworks.UNITTEST, 'good_param': 'good_val2'}
+        for key in oracle:
+            self.assertEqual(parser.get_parameter(key).get_value(), oracle[key])
 
     def test_parse_cli_one_good_flag(self):
-        args = ['dir=test', '-g']
+        args = ['sdir=.', 'tdir=test', '-g']
         parser = CLIParser(args, check_assertions=True)
-        parser.add_flag('g')
+        parser.add_flag('-g', None)
         parser.parse_cli()
-        param_oracle = {'dir': 'test', 'language': 'Python'}
-        flag_oracle = {'h': False, 'g': True}
-        self.assertDictEqual(parser.params, param_oracle)
-        self.assertDictEqual(parser.flags, flag_oracle)
+        param_oracle = {'sdir': '.', 'tdir': 'test', 'lang': Languages.PYTHON, 'framework': Frameworks.UNITTEST}
+        flag_oracle = {'-h': False, '-g': True, '-s': False, '-t': False}
+        for key in param_oracle:
+            self.assertEqual(parser.get_parameter(key).get_value(), param_oracle[key])
+        for key in flag_oracle:
+            self.assertEqual(parser.get_flag(key).get_value(), flag_oracle[key])
 
     def test_parse_cli_multiple_good_params(self):
-        args = ['dir=test', 'good_param1=val1', 'good_param2=val3']
+        args = ['sdir=.', 'tdir=test', 'good_param1=val1', 'good_param2=val3']
         parser = CLIParser(args, check_assertions=True)
         parser.add_param('good_param1', {'val1', 'val2'})
         parser.add_param('good_param2', {'val3', 'val4'})
         parser.parse_cli()
-        param_oracle = {'dir': 'test', 'language': 'Python', 'good_param1': 'val1', 'good_param2': 'val3'}
-        self.assertDictEqual(parser.params, param_oracle)
+        param_oracle = {'sdir': '.', 'tdir': 'test', 'lang': Languages.PYTHON, 'good_param1': 'val1', 'good_param2': 'val3'}
+        for key in param_oracle:
+            self.assertEqual(parser.get_parameter(key).get_value(), param_oracle[key])
 
     def test_parse_cli_multiple_good_flags(self):
-        args = ['dir=test', '-g', '-t', '-v'] # currently -g, -t, -v have no real functionality. if these flags are added as actual functional flags, this test should be updated
+        args = ['sdir=.', 'tdir=test', '-g', '-u', '-v'] # currently -g, -t, -v have no real functionality. if these flags are added as actual functional flags, this test should be updated
         parser = CLIParser(args, check_assertions=True)
-        parser.add_flag('g')
-        parser.add_flag('t')
-        parser.add_flag('v')
+        parser.add_flag('-g', None)
+        parser.add_flag('-u', None)
+        parser.add_flag('-v', None)
         parser.parse_cli()
-        flag_oracle = {'g': True, 't': True, 'v': True, 'h': False}
-        self.assertDictEqual(flag_oracle, parser.flags)
+        flag_oracle = {'-g': True, '-g': True, '-u': True, '-v': True, '-h': False}
+        for key in flag_oracle:
+            self.assertEqual(parser.get_flag(key).get_value(), flag_oracle[key])
 
     # Test CLIParser.parse_param method
     def test_parse_param(self):
