@@ -1,5 +1,5 @@
 import unittest
-from crackn.parsing.cli_parser import CLIParser, Languages, Frameworks
+from crackn.parsing.cli_parser import CLIParser, Language, Framework
 
 class TestCLIParser(unittest.TestCase):
     # Test CLIParser.parse_cli method
