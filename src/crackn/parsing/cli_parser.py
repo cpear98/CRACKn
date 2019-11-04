@@ -108,11 +108,12 @@ class Flag():
         if self.long is not None: assert(self.long[:2] == '--')
 
 # instantiate parameters as objects
-param_source_dir = Parameter('sdir', 'The directory containing the Python source code you would like to analyze.', None, None, required=True)
-param_test_dir = Parameter('tdir', 'The directory containing the unit tests for the source code in src-dir', None, None, required=True)
+param_repo_dir = Parameter('repo', 'The name of the folder in the repos directory containing the project to analyze.', None, None, required=True)
+param_source_dir = Parameter('sdir', 'The directory containing the Python source code you would like to analyze.', None, None)
+param_test_dir = Parameter('tdir', 'The directory containing the unit tests for the source code in src-dir', None, None)
 param_language = Parameter('lang', 'The language the source code to be analyzed is written in.', {Language.PYTHON}, Language.PYTHON)
 param_test_framework = Parameter('framework', 'The test framework the supplied unit tests are written with.', {Framework.UNITTEST}, Framework.UNITTEST)
-parameters = {param_source_dir, param_test_dir, param_language, param_test_framework}
+parameters = {param_repo_dir, param_source_dir, param_test_dir, param_language, param_test_framework}
 
 # instantiate flags as objects
 flag_help = Flag('-h', '--help', 'Display this help message.')
@@ -208,7 +209,7 @@ class CLIParser():
                 raise MissingRequiredParameterException(parameter.name)
     
     def print_usage(self):
-        print('Usage: crackn sdir=<source directory> tdir=<test directory> [parameters] [flags]')
+        print('Usage: crackn [repo=<repo name> | sdir=<source directory> tdir=<test directory>] [parameters] [flags]')
 
     def print_help(self):
         self.print_usage()
