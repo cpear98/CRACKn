@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 from crackn.parsing.cli_parser import CLIParser
-from crackn.parsing.bandit_parser import BanditParser
+from crackn.parsing.bandit_parser import BanditReport
 
 if __name__ == '__main__':
     cli_parser = CLIParser(sys.argv[1:])
@@ -36,13 +36,11 @@ if __name__ == '__main__':
             task_complete = True
         except TimeoutError:
             pass
-
-    bandit_report = result.stdout.decode('utf-8')
-    if not silent_mode:
-        print(bandit_report)
-
     print('[INFO]: Bandit analysis complete.')
 
+    bandit_output = result.stdout.decode('utf-8')
+    if not silent_mode:
+        print(bandit_output)
+
     print('[INFO]: Parsing Bandit report...')
-    bandit_parser = BanditParser(bandit_report)
-    bandit_parser.parse()
+    bandit_report = BanditReport(bandit_output, auto_parse=True)
