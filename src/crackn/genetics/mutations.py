@@ -1,5 +1,6 @@
 import ast
 import astor
+from crackn.parsing import bandit_parser
 
 class Chromosome():
     def __init__(self, source=None, source_tree=None):
@@ -11,9 +12,10 @@ class Chromosome():
         if self.source is not None:
             assert(type(source == str), 'Attribute "source" of chromosome must be of type "str".')
             if self.source_tree is None:
-                self.generate_tree()
+                self.source_tree = self.generate_tree()
         else:
-            self.generate_source()
+            self.source = self.generate_source()
+        self.bandit_report = bandit_parser.BanditReport(source=source, auto_analyze=True, auto_parse=True)
 
     def __eq__(self, other):
         # TODO: stub
@@ -31,13 +33,13 @@ class Chromosome():
         # TODO: stub
         if source is None:
             source = self.source
-        pass
+        return ast.parse(source)
 
     def generate_source(self, tree=None):
         # TODO: stub
         if tree is None:
             tree = self.source_tree
-        pass
+        return astor.to_source(tree)
 
 class Mutator():
     def __init__(self):

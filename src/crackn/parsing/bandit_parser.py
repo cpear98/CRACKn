@@ -1,4 +1,6 @@
 from enum import Enum
+import subprocess
+import os
 
 # enum values used for issue severity and confidence
 class Rating(Enum):
@@ -78,8 +80,20 @@ class Issue():
 
 # class to parse the string output of bandit
 class BanditReport():
-    def __init__(self, bandit_report, auto_parse=False):
-        self.report = bandit_report
+    def __init__(self, source=None, bandit_report=None, auto_analyze=False, auto_parse=False):
+        if source is None and bandit_report is None:
+            raise Exception('Attempted to initialize a bandit report with no source code or bandit output.')
+
+        self.report = None
+
+        if bandit_report is None:
+            # sets self.report
+            self.source = source
+            if auto_analyze:
+                self.analyze()
+        else:
+            self.report = bandit_report
+
         self.issues = None
         self.lines_scanned = None
         self.lines_skipped = None
@@ -88,9 +102,19 @@ class BanditReport():
         self.files_skipped = None
 
         if auto_parse:
-            self._parse()
+            self.parse()
 
-    def _parse(self):
+    def analyze(self):
+        file_location = 'crackn_temp/crackn_temp.py'
+        # create a temporary file and write the source code to it
+        with open(file_location, 'w') as f:
+            f.write(self.source)
+        # invoke bandit to analyze the source code
+        self.report = subprocess.run(['bandit', '-r', file_location], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=10.0).stdout.decode('utf-8')
+        # remove the temporary file
+        os.remove(file_location)
+
+    def parse(self):
         self.issues = set()
         strings = self.report.split('\n')
         for i in range(len(strings)):
