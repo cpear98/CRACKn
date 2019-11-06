@@ -99,5 +99,3 @@ class BanditReport():
             if len(line) > 0 and line[0] == '>>':
                 # an issue in the bandit report spans 7 lines
                 self.issues.add(Issue(lines=strings[i:i+7]))
-        for issue in self.issues:
-            print(issue)
