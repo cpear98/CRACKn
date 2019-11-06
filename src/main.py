@@ -3,6 +3,7 @@ import sys
 import os
 from crackn.parsing.cli_parser import CLIParser
 from crackn.parsing.bandit_parser import BanditReport
+from crackn.genetics.mutations import GeneticSimulator, Population, Chromosome
 
 if __name__ == '__main__':
     cli_parser = CLIParser(sys.argv[1:])
@@ -27,20 +28,24 @@ if __name__ == '__main__':
         print(f'[ERROR]: Repo "{repo_name}" found but is missing required subdirectories. Please ensure "{repo_name}/src" and "{repo_name}/test" exist.')
         exit(1)
     
-    print('[INFO]: Running Bandit...')
-    task_complete = False
-    result = None
-    while(not task_complete):
-        try:
-            result = subprocess.run(['bandit', '-r', repo_path + '/src'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=10.0)
-            task_complete = True
-        except TimeoutError:
-            pass
-    print('[INFO]: Bandit analysis complete.')
+    simulators = set()
+    source_files = set()
+    source_files_with_tests = set()
 
-    bandit_output = result.stdout.decode('utf-8')
-    if not silent_mode:
-        print(bandit_output)
+    print('[INFO]: Scanning for source files...')
+    for entry in os.scandir(f'{repo_path}/src'):
+        if entry.name[-3:] == '.py' and entry.name[0] != '_':
+            source_files.add(entry.name)
+    print('[INFO]: Found files:')
+    for file_name in source_files:
+        print(f'[INFO]:   - {file_name}')
+    print()
 
-    print('[INFO]: Parsing Bandit report...')
-    bandit_report = BanditReport(bandit_output, auto_parse=True)
+    print('[INFO]: Scanning for unit test files...')
+    for entry in os.scandir(f'{repo_path}/test'):
+        if entry.name[:5] == 'test_' and entry.name[5:] in source_files:
+            source_files_with_tests.add(entry.name[5:])
+    print(f'[INFO]: Found unit tests for files:')
+    for file_name in source_files_with_tests:
+        simulators.add(GeneticSimulator(file_name, f'test_{file_name}', repo_name))
+        print(f'[INFO]:   - {file_name}')
