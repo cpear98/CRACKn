@@ -1,5 +1,7 @@
 import unittest
-from src import example
+import sys, os.path
+sys.path.append(os.path.abspath('../'))
+from example1.src import example
 
 class TestExample(unittest.TestCase):
     def test_get_number(self):
@@ -9,6 +11,15 @@ class TestExample(unittest.TestCase):
     def test_guess(self):
         self.assertEqual(example.guess(4, 6), False)
         self.assertEqual(example.guess(3, 3), True)
+
+    def test_true(self):
+        self.assertTrue(True)
+
+    def test_false_one(self):
+        self.assertTrue(False)
+
+    def test_false_two(self):
+        self.assertTrue(False)
 
 if __name__ == '__main__':
     unittest.main()
