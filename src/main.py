@@ -28,7 +28,7 @@ if __name__ == '__main__':
         print(f'[ERROR]: Repo "{repo_name}" found but is missing required subdirectories. Please ensure "{repo_name}/src" and "{repo_name}/test" exist.')
         exit(1)
     
-    simulators = set()
+    simulators = []
     source_files = set()
     source_files_with_tests = set()
 
@@ -47,17 +47,13 @@ if __name__ == '__main__':
             source_files_with_tests.add(entry.name[5:])
     print(f'[INFO]: Found unit tests for files:')
     for file_name in source_files_with_tests:
-        simulators.add(GeneticSimulator(file_name, f'test_{file_name}', repo_name))
+        simulators.append(GeneticSimulator(file_name, f'test_{file_name}', repo_name))
         print(f'[INFO]:   - {file_name}')
 
     for simulator in simulators:
         with open(f'{repo_path}/src/{simulator.source_file}', 'r') as f:
-            try:
-                x = Chromosome(simulator.population, source=f.read())
-                simulator.population.chromosomes.append(x)
+
+            simulator.generate_starting_population()
+            for x in simulator.population.chromosomes:
                 print(x)
-            except Exception as e:
-                print('Failed')
-                print(e)
-                pass
 

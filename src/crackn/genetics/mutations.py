@@ -2,6 +2,7 @@ import ast
 import astor
 import subprocess
 import os
+import random
 from crackn.parsing import bandit_parser as bp, unittest_parser
 
 # a class representing a single potential solution
@@ -81,18 +82,54 @@ class Chromosome():
         return f'Chromosome: source={self.population.simulation.source_file}, fitness={self.fitness}'
 
 # a static class containing helper methods for mutating chromosomes
-class Mutator():
+class Mutator(ast.NodeTransformer):
+    def __init__(self):
+        super().__init__(self)
+        self._mutate = False
+        self._names = set()
+        self._num_mutations = 0
+
+    def visit_Name(self, node):
+        if self._mutate:
+            rand = random.randint(1, 100)
+            # only mutate 1% of the time
+            if rand == 1:
+                self._num_mutations += 1
+                print('Need to implement mutation for Name node')
+            return node
+        else:
+            self._names.add(node.id)
+            return node
+
     @staticmethod
     def crossover(self, chromosome1, chromosome2):
         assert (type(chromosome1) == Chromosome and type(chromosome2) == Chromosome)
         # TODO: stub
         return chromosome1
 
-    @staticmethod
-    def mutate(self, chromosome):
-        assert (type(chromosome) == Chromosome)
-        # TODO: stub
-        return chromosome
+    def mutate(self, source, require_mutation=False):
+        assert (type(source) == str)
+        tree = ast.parse(source)
+        # visit the tree once without mutating to gather information used to make mutations
+        self.visit(tree)
+
+        # set the _mutate flag to true to enable mutation when parsing the tree
+        self._mutate = True
+
+        # visit the tree again, this time making mutations
+        while(True):
+            self.visit(tree)
+            if not (require_mutation and self._num_mutations < 1):
+                break
+
+        # reset the mutators flags and namespace so it can be used again
+        self._reset()
+        return astor.to_source(tree)
+
+    def _reset(self):
+        self._mutate = False
+        self._names = set()
+        self._num_mutations = 0
 
 # a class representing a collection of chromosomes
 class Population():
@@ -101,13 +138,33 @@ class Population():
         self.simulation = simulation
         self.chromosomes = []
 
+    def add_chromosome(self, source):
+        chromosome = Chromosome(self, source=source)
+        self.chromosomes.append(chromosome)
+
 # base class that run a genetic algorithm on a single source code file with an associated unit test file
 class GeneticSimulator():
-    def __init__(self, source_file, test_file, repo):
+    def __init__(self, source_file, test_file, repo, population_size=25, selection_size=10):
         self.source_file = source_file
+        self.source = None
+        with open(os.path.abspath(__file__ + f'/../../../../repos/{repo}/src/{source_file}')) as f:
+            self.source = f.read()
         self.test_file = test_file
         self.repo = repo
-        self.population = Population(self)
-        # TODO: stub
+        self.population_size = population_size
+        self.selection_size = selection_size
+        self.population = None
 
+    def generate_starting_population(self):
+        # create a new empty population
+        population = Population(self)
+
+        # add population_size chromosomes to the population and randomly mutate them, 
+        # leaving one unchanged and requiring all other be mutated at least once
+        population.add_chromosome(self.source)
+        for _ in range(self.population_size - 1):
+            pass
+            #mutated_source = Mutator.mutate
+            #chromosome = Chromosome(population, )
+        self.population = population
     
