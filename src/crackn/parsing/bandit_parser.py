@@ -1,6 +1,7 @@
 from enum import Enum
 import subprocess
 import os
+import tempfile
 
 # enum values used for issue severity and confidence
 class Rating(Enum):
@@ -8,6 +9,12 @@ class Rating(Enum):
     LOW = 1,
     MEDIUM = 2,
     HIGH = 3
+
+    @staticmethod
+    def get_weight(rating):
+        assert(type(rating) == Rating)
+        weight = rating.value if type(rating.value) == int else rating.value[0]
+        return weight
 
     @classmethod
     def from_string(self, string):
@@ -105,14 +112,15 @@ class BanditReport():
             self.parse()
 
     def analyze(self):
-        file_location = 'crackn_temp/crackn_temp.py'
         # create a temporary file and write the source code to it
-        with open(file_location, 'w') as f:
+        f = tempfile.NamedTemporaryFile(mode='w', delete=False)
+        try:
             f.write(self.source)
-        # invoke bandit to analyze the source code
-        self.report = subprocess.run(['bandit', '-r', file_location], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=10.0).stdout.decode('utf-8')
-        # remove the temporary file
-        os.remove(file_location)
+            f.close()
+            # invoke bandit to analyze the source code
+            self.report = subprocess.run(['bandit', '-r', f.name], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=10.0).stdout.decode('utf-8')
+        finally:
+            os.remove(f.name)
 
     def parse(self):
         self.issues = set()

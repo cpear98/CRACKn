@@ -49,3 +49,15 @@ if __name__ == '__main__':
     for file_name in source_files_with_tests:
         simulators.add(GeneticSimulator(file_name, f'test_{file_name}', repo_name))
         print(f'[INFO]:   - {file_name}')
+
+    for simulator in simulators:
+        with open(f'{repo_path}/src/{simulator.source_file}', 'r') as f:
+            try:
+                x = Chromosome(simulator.population, source=f.read())
+                simulator.population.chromosomes.append(x)
+                print(x)
+            except Exception as e:
+                print('Failed')
+                print(e)
+                pass
+

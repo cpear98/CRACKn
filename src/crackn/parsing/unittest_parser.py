@@ -9,7 +9,13 @@ class UnittestParser():
     @staticmethod
     def parse(string):
         results = string.split('\n')
-        end_results = results[len(results)-3:]
-        num_ran = int(end_results[0].split()[1])
-        num_failed = int(end_results[2][-2])
-        return UnittestResults(False, num_ran, num_ran - num_failed, num_failed)
+        nran, nfailed = 0, 0
+        for line in results:
+            line = line.split()
+            if len(line) == 0:
+                pass
+            elif line[0] == 'Ran':
+                nran = int(line[1])
+            elif line[0] == 'FAILED':
+                nfailed = int(line[1][-2])
+        return UnittestResults(False, nran, nran - nfailed, nfailed)
