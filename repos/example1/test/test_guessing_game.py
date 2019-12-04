@@ -1,7 +1,7 @@
 import unittest
 import sys, os.path
 sys.path.append(os.path.abspath('../'))
-from example1.src import example
+from example1.src import guessing_game as example
 
 class TestExample(unittest.TestCase):
     def test_get_number(self):
