@@ -58,9 +58,7 @@ if __name__ == '__main__':
         Log.INFO(f'    - {file_name}')
 
     for simulator in simulators:
-        with open(f'{repo_path}/src/{simulator.source_file}', 'r') as f:
-
-            simulator.generate_starting_population()
-            for x in simulator.population.chromosomes:
-                print(x)
+        simulator.generate_starting_population()
+        for chromosome in simulator.population.chromosomes:
+            print(chromosome)
 

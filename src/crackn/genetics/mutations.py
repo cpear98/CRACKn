@@ -7,9 +7,26 @@ from crackn.parsing import bandit_parser as bp, unittest_parser
 import crackn.settings as settings
 import crackn.logging as Log
 
+class TestFileModifier(ast.NodeTransformer):
+    def __init__(self, filename, uuid):
+        super().__init__()
+        self.filename = filename
+        self.uuid = uuid
+
+    def visit_alias(self, node):
+        if node.name == self.filename:
+            return ast.alias(name=f'{self.filename}_{self.uuid}', asname=node.asname)
+        return node
+
 # a class representing a single potential solution
 class Chromosome():
+    next_uuid = 0
+
     def __init__(self, population, source=None, source_tree=None):
+        # assign a uuid to this chromosome and then increment the static uuid counter
+        self.uuid = Chromosome.next_uuid
+        Chromosome.next_uuid += 1
+
         if source is None and source_tree is None:
             raise Exception('Attempted to initialize a chromosome without source code or a source code AST.')
         self.source = source
@@ -22,6 +39,7 @@ class Chromosome():
             Log.INFO('Initialized new chromosome from AST')
             self.source = self.generate_source()
 
+        self.timeout_occurred = False
         self.population = population
         self.bandit_report = bp.BanditReport(source=source, auto_analyze=True, auto_parse=True)
         self.test_results = self.run_tests(population.simulation.test_file, population.simulation.repo)
@@ -35,7 +53,7 @@ class Chromosome():
         return not self.__eq__(other)
 
     def _compute_fitness(self):
-        if self.test_results.crashed or self.test_results.nran == 0:
+        if self.timeout_occurred or self.test_results.crashed or self.test_results.nran == 0:
             self.fitness = float('inf')
         else:
             bandit_fitness_contribution = None
@@ -63,22 +81,82 @@ class Chromosome():
         assert(self.source_tree is not None)
         return astor.to_source(self.source_tree)
 
-    def run_tests(self, test_file, repo):
-        # TODO: make more robust so tests are run with respect to chromosome instead of original file
+    def modify_test_source(self, original, source_name):
+        original_tree = ast.parse(original)
+        modifier = TestFileModifier(source_name, self.uuid)
+        modifier.visit(original_tree)
+        new_source = astor.to_source(original_tree)
+        return new_source
+
+    # helper method to create a modified version of the unittest file which uses the source for this chromosome instead of the original source
+    def create_test_file(self):
+        file_path = os.path.abspath(__file__ + f'/../../../../repos/{self.population.simulation.repo}')
+        test_file = self.population.simulation.test_file
+        source_file = source_file = self.population.simulation.source_file
+        original_test_source = None
+        with open(f'{file_path}/test/{test_file}', 'r') as f:
+            original_test_source = f.read()
+    
+        new_test_source = self.modify_test_source(original_test_source, source_file[:-3])
+
+        with open(f'{file_path}/test/{test_file[:-3]}_{self.uuid}.py', 'w') as f:
+            f.write(new_test_source)
+
+    def create_source_file(self):
+        file_path = os.path.abspath(__file__ + f'/../../../../repos/{self.population.simulation.repo}')
+        source_file = self.population.simulation.source_file
+        with open(f'{file_path}/src/{source_file[:-3]}_{self.uuid}.py', 'w') as f:
+            f.write(self.source)
+
+    def cleanup_files(self):
+        file_path = os.path.abspath(__file__ + f'/../../../../repos/{self.population.simulation.repo}')
+        test_file = self.population.simulation.test_file
+        os.remove(f'{file_path}/test/{test_file[:-3]}_{self.uuid}.py')
+
+        source_file = self.population.simulation.source_file
+        os.remove(f'{file_path}/src/{source_file[:-3]}_{self.uuid}.py')
+
+    def test(self, test_file, repo):
         file_path = os.path.abspath(__file__ + f'/../../../../repos/{repo}')
         current_path = os.path.abspath(os.getcwd())
         os.chdir(file_path)
-        result = subprocess.run(['python3', f'test/{test_file}'], \
-                               stdout=subprocess.PIPE, \
-                               stderr=subprocess.STDOUT)
+
+        try:
+            result = subprocess.run(['python3', f'test/{test_file}'], \
+                                stdout=subprocess.PIPE, \
+                                stderr=subprocess.STDOUT, timeout=5)
+        except subprocess.TimeoutExpired:
+            Log.ERROR(f'TimoutExpired exception occured while attempting to run test file {test_file}')
+            self.timeout_occurred = True
+
         os.chdir(current_path)
+        if self.timeout_occurred:
+            return None
+
         return unittest_parser.UnittestParser.parse(result.stdout.decode('utf-8'))
+
+    def run_tests(self, test_file, repo):
+        test_file = f'{test_file[:-3]}_{self.uuid}.py'
+
+        # first create the custom unittest file
+        self.create_test_file()
+
+        # next create a source file from this chromosome's source code
+        self.create_source_file()
+
+        # actually execute the tests with respect to this source
+        results = self.test(test_file, repo)
+
+        # cleanup temp files
+        self.cleanup_files()
+
+        return results
 
     def __repr__(self):
         src = self.population.simulation.source_file
         nvuln = len(self.bandit_report.issues)
-        nfail = self.test_results.nfailing
-        nran = self.test_results.nran
+        nfail = 0 if self.test_results is None else self.test_results.nfailing
+        nran = 0 if self.test_results is None else self.test_results.nran
         return f'Chromosome: source={src}, fitness={self.fitness} (nvuln: {nvuln}, nfail: {nfail}/{nran})'
 
 # a static class containing helper methods for mutating chromosomes
@@ -251,6 +329,16 @@ class Population():
         self.chromosomes.remove(chromosome)
         self.size = len(self.chromosomes)
 
+    def get_fittest(self):
+        if self.size == 0:
+            return None
+        return max(self.chromosomes, key=lambda x: x.fitness)
+
+    def get_least_fit(self):
+        if self.size == 0:
+            return None
+        return min(self.chromosomes, key=lambda x: x.fitness)
+
 # base class that run a genetic algorithm on a single source code file with an associated unit test file
 class GeneticSimulator():
     def __init__(self, source_file, test_file, repo, population_size=25, selection_size=10):
@@ -283,6 +371,12 @@ class GeneticSimulator():
             self.population.add_chromosome(mutated_source)
         assert(self.population.size == self.population_size)
         Log.INFO('Finished generating starting population.')
+
+    def get_fittest(self):
+        return self.population.get_fittest()
+
+    def get_least_fit(self):
+        return self.population.get_least_fit()
 
     # method to check if the current population contains an optimal solution
     def has_optimal_solution(self):
