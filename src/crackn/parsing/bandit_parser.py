@@ -2,6 +2,7 @@ from enum import Enum
 import subprocess
 import os
 import tempfile
+import crackn.logging as Log
 
 # enum values used for issue severity and confidence
 class Rating(Enum):
@@ -106,11 +107,12 @@ class BanditReport():
         self.lines_skipped = None
         self.issues_by_severity = {Rating.UNDEFINED: None, Rating.LOW: None, Rating.MEDIUM: None, Rating.HIGH: None}
         self.issues_by_confidence = {Rating.UNDEFINED: None, Rating.LOW: None, Rating.MEDIUM: None, Rating.HIGH: None}
-        self.files_skipped = None
+        self.skipped = False
 
         if auto_parse:
             self.parse()
 
+    # potential opportunity to optimize
     def analyze(self):
         # create a temporary file and write the source code to it
         f = tempfile.NamedTemporaryFile(mode='w', delete=False)
@@ -122,6 +124,7 @@ class BanditReport():
         finally:
             os.remove(f.name)
 
+    # not a significant optimization opportunity
     def parse(self):
         self.issues = set()
         strings = self.report.split('\n')
@@ -131,3 +134,5 @@ class BanditReport():
             if len(line) > 0 and line[0] == '>>':
                 # an issue in the bandit report spans 7 lines
                 self.issues.add(Issue(lines=strings[i:i+7]))
+            elif len(line) > 0 and ' '.join(line[:2]) == 'Files skipped' and line[2] != '(0):':
+                self.skipped = True

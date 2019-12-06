@@ -51,14 +51,14 @@ if __name__ == '__main__':
     Log.INFO('Scanning for unit test files...')
     for entry in os.scandir(f'{repo_path}/test'):
         if entry.name[:5] == 'test_' and entry.name[5:] in source_files:
+            Log.INFO('Located test file')
             source_files_with_tests.add(entry.name[5:])
     Log.INFO(f'Found unit tests for files:')
     for file_name in source_files_with_tests:
-        simulators.append(GeneticSimulator(file_name, f'test_{file_name}', repo_name))
         Log.INFO(f'    - {file_name}')
+        simulators.append(GeneticSimulator(file_name, f'test_{file_name}', repo_name))
 
     for simulator in simulators:
         simulator.generate_starting_population()
-        for chromosome in simulator.population.chromosomes:
-            print(chromosome)
+        simulator.sim_n_generation(10)
 
