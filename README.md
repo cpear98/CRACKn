@@ -27,7 +27,7 @@ repos
       - [source_file].py
     - test
       - __init__.py
-      - [source_file]_test.py
+      - test_[source_file].py
 ```
 
 You can look at the `example1` repo provided for reference.
