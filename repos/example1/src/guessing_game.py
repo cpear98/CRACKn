@@ -1,7 +1,6 @@
 import random
 
 def get_number():
-    x = 5
     x = random.randint(1, 10)
     return x
 

@@ -10,6 +10,8 @@ def _print_message(msg_type, text, urgency):
     if urgency >= settings.log_level:
         print(_generate_message(msg_type, text), flush=True)
 
+def DEBUG(text, urgency=0):
+    _print_message('DEBUG', text, urgency)
 def INFO(text, urgency=1):
     _print_message('INFO', text, urgency)
 

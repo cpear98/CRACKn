@@ -5,4 +5,4 @@ def init():
 def set_silent(s):
     global log_level
     if s:
-        log_level = 3
+        log_level = 2
